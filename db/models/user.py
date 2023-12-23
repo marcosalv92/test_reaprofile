@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, constr, validator
 
 class User(BaseModel):
     id: str | None = 0
+    uuid: str | None = ''
     username: EmailStr
     full_name: str
     disabled: bool | None = True
