@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from jose import JWTError, jwt
 from bson import ObjectId
 from datetime import datetime, timedelta
-import uuid
+from uuid import uuid4
 
 
 SECRET_KEY = "9e4e2827670f54e7e09d353d70a907a44f63e3f590ac64f81017943f89d8cbbe"
@@ -165,7 +165,7 @@ async def add_user(user: UserRegister):
     user_dict = dict(user)
     del user_dict['id']
     user_dict['hashed_password'] = get_password_hash(user_dict['password'])
-    user_dict['uuid'] = str(uuid.uuid4())
+    user_dict['uuid'] = str(uuid4())
     del user_dict ['password']
     
     id = db_client.users.insert_one(user_dict).inserted_id
