@@ -2,11 +2,11 @@ from fastapi import APIRouter, status, HTTPException, Depends, Security
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, SecurityScopes
 from db.client import db_client
-from db.models.user import User, UserDB
+from db.models.user import User, UserDB, UserRegister
 from db.models.token import Token, TokenData
 from db.schemas.user import users_schema, user_schema
 from passlib.context import CryptContext
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from jose import JWTError, jwt
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -22,20 +22,25 @@ oauth2 = OAuth2PasswordBearer(tokenUrl='login', scopes={"user": "Read informatio
 
 router = APIRouter(prefix='/users', tags=['users'],  responses={404: {'message' : status.HTTP_404_NOT_FOUND}})
 
-class UserInDB(User):
-    hashed_password: str
-
 def search_user(field: str, key):
     try:
-        user = user_schema(db_client.users.find_one({field: key}))
-        return User(**user)
+        find_one = db_client.users.find_one({field: key})
+        if find_one:
+            user = user_schema(find_one)        
+            return User(**user)
+        else:
+            return None  
     except:
         return {'error':'No se ha encontrado el usuario '}
 
 def search_user_db(field: str, key):
     try:
-        user = user_schema(db_client.users.find_one({field: key}))
-        return UserDB(**user)
+        find_one = db_client.users.find_one({field: key})
+        if find_one:
+            user = user_schema(find_one)
+            return UserDB(**user)
+        else:
+            return None
     except:
         return {'error':'No se ha encontrado el usuario '}
     
@@ -53,7 +58,7 @@ def get_user(db, username: str):
 
 def authenticate_user(username: str, password: str):
     user = search_user_db('username', username)
-    if not user:
+    if user == None:
         return False
     if not verify_password(password, user.hashed_password):
         return False
@@ -120,6 +125,20 @@ async def get_all_users(user: Annotated[User, Depends(get_current_user)]):
     except:
         return {'message': 'Data not found'}
     
+ # Store token in DB for implement logout
+# async def add_token(token: Token):
+#     if type(search_user('email', user.email)) == User:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='El usuario ya exite')
+    
+#     user_dict = dict(user)
+#     del user_dict['id']
+#     user_dict['hashed_password'] = get_password_hash(user_dict['hashed_password']) 
+    
+#     id = db_client.users.insert_one(user_dict).inserted_id
+#     new_user = user_schema(db_client.users.find_one({'_id': id}))
+    
+#     return User(**new_user)
+
 
 
 @router.get('/all')
@@ -137,14 +156,15 @@ async def get_user_by_id(user_id: str, user: Annotated[User, Security(get_curren
 # async def get_user_by_id(id: str):
 #     return search_user('_id', ObjectId(id))
 
-@router.post('/', response_model=User, status_code=status.HTTP_201_CREATED)
-async def add_user(user: UserDB):
-    if type(search_user('email', user.email)) == User:
+@router.post('/register', response_model=User, status_code=status.HTTP_201_CREATED)
+async def add_user(user: UserRegister):
+    if type(search_user('username', user.username)) == User:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='El usuario ya exite')
     
     user_dict = dict(user)
     del user_dict['id']
-    user_dict['hashed_password'] = get_password_hash(user_dict['hashed_password']) 
+    user_dict['hashed_password'] = get_password_hash(user_dict['password'])
+    del user_dict ['password']
     
     id = db_client.users.insert_one(user_dict).inserted_id
     new_user = user_schema(db_client.users.find_one({'_id': id}))
@@ -152,25 +172,29 @@ async def add_user(user: UserDB):
     return User(**new_user)
 
 @router.put('/', response_model=User)
-async def update_user(user: Annotated[User, Security(get_current_user, scopes=['user'])]):
-    user_dict = dict(User)
-    del user_dict['id']
+async def update_user(user_update: UserRegister, user: Annotated[User, Security(get_current_user, scopes=['user'])]):
+    user_update = dict(user_update)
+    user_update['hashed_password'] = get_password_hash(user_update['password'])
+    del user_update['password']
+    del user_update['id']
     try:
-        db_client.users.find_one_and_replace({'_id': ObjectId(user.id)}, user_dict)
+        db_client.users.find_one_and_replace({'_id': ObjectId(user.id)}, user_update)
 
     except:
         return {'message': 'User not found'}
     
-    return user
+    return user_schema(db_client.users.find_one({'_id': ObjectId(user.id)}))
 
 
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 async def user(id: str, user: Annotated[User, Security(get_current_user, scopes=['user'])]):
-    
-    found = db_client.users.find_one_and_delete({'_id': ObjectId(id)})
-
-    if not found:
-        return {'error': 'no se ha elimando el usuario'}
+    try:
+        found = db_client.users.find_one_and_delete({'_id': ObjectId(id)})
+        if not found:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"mensaje": f"User with ID {id} remove"}      
+    except:
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 @router.post("/login")
@@ -188,6 +212,11 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     access_token = create_access_token(
         data={"sub": user.username, "scopes": form_data.scopes}, expires_delta=access_token_expires
     )
+    
+    # Store token in DB for implement logout
+    
+
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
