@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, HTTPException, Depends, Security
+from fastapi import APIRouter, status, HTTPException, Depends, Security, Path
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, SecurityScopes
 from db.client import db_client
@@ -6,7 +6,7 @@ from db.models.user import User, UserDB, UserRegister
 from db.models.token import Token, TokenData
 from db.schemas.user import users_schema, user_schema
 from passlib.context import CryptContext
-from pydantic import ValidationError
+from pydantic import ValidationError, UUID4
 from jose import JWTError, jwt
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -140,12 +140,15 @@ async def get_all_users(user: Annotated[User, Depends(get_current_user)]):
     
 #     return User(**new_user)
 
-
-
 @router.get('/all')
 async def get_all_users(user: Annotated[User, Security(get_current_active_user, scopes=["admin"])]) -> list[User]:
     return users_schema(db_client.users.find())
 
+
+# Path
+@router.get('/uuid/{uuid}', response_model=User)
+async def get_user_by_uuid(uuid: UUID4, user: Annotated[User, Security(get_current_user, scopes=['user'])]):
+    return search_user('uuid', str(uuid))
 
 # Path
 @router.get('/{user_id}', response_model=User)
@@ -220,7 +223,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     
 
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"uuid": user.uuid, "username": user.username, "full_name": user.full_name, "disabled": user.disabled, "access_token": access_token, "token_type": "bearer"}
 
 
 
