@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from uuid import UUID
+from pydantic import BaseModel, EmailStr
 
 class Token(BaseModel):
     access_token: str
@@ -8,3 +9,10 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str | None = None
     scopes: list[str] = []
+
+class TokenResponse(Token):
+    uuid: UUID
+    username: EmailStr
+    full_name: str
+    disabled: bool
+    
