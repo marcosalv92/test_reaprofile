@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from core.config import settings
 
-SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:marcos@localhost:5433/postgres'
+# SQLALCHEMY_DATABASE_URL = 'postgresql://fl0user:Jl2fSYogCVP8@ep-damp-tooth-78921972.ap-southeast-1.aws.neon.fl0.io:5432/reaprofiledb?sslmode=require'
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
