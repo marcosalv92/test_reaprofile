@@ -8,7 +8,7 @@ from db_postgres import models, schemas
 from db_postgres.database import get_db
 from db_postgres import crud
 from db_postgres.schemas import User
-from repository.auth import authenticate_user
+from routers.oauth import authenticate_user
 from routers.schemas import Token, TokenData
 from routers.hashing import Hash
 from jose import jwt, JWTError
