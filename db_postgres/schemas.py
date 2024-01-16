@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from pydantic import BaseModel, EmailStr, UUID4, Field, constr, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, UUID4, Field, constr, field_validator
 from datetime import datetime
 
 # class UserProfileBase(BaseModel):
@@ -19,7 +19,7 @@ from datetime import datetime
 # class UserProfile(UserProfileBase):
 #     id: str
 #     user_id: int
-#     class Config:
+#     class Config(ConfigDict):
 #         orm_mode = True
 
 class UserBase(BaseModel):
@@ -28,7 +28,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = constr(min_length=8)
-    @validator("password")
+    @field_validator("password")
     def validate_password(cls, value):
         if not any(char.isdigit() for char in value):
             raise ValueError("Password must contain at least one number")
@@ -41,8 +41,8 @@ class User(UserBase):
     uuid: UUID4
     created: datetime
     # user_profile = UserProfile
-    class Config:
-        orm_mode = True
+    class Config(ConfigDict):
+        orm_mode: True
 
 class UserDB(User):
     hashed_password: str
@@ -50,7 +50,7 @@ class UserDB(User):
 class CurrentUser(UserBase):
     uuid: UUID4
     disabled: bool
-    class Config:
+    class Config(ConfigDict):
         orm_mode: True
 
 class UserUpdate(BaseModel):
@@ -58,7 +58,7 @@ class UserUpdate(BaseModel):
     full_name: str = Field(default=None)
     password: str = Field(default=None)
     disabled: bool = Field(default=None)
-    @validator("password")
+    @field_validator("password")
     def validate_password(cls, value):
         if not any(char.isdigit() for char in value):
             raise ValueError("Password must contain at least one number")

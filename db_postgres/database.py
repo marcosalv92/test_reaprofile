@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from core.config import settings
 
 # SQLALCHEMY_DATABASE_URL = 'postgresql://fl0user:Jl2fSYogCVP8@ep-damp-tooth-78921972.ap-southeast-1.aws.neon.fl0.io:5432/reaprofiledb?sslmode=require'

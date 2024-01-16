@@ -9,7 +9,7 @@ from db_postgres.database import get_db
 from db_postgres import crud
 from db_postgres.schemas import User
 from routers.oauth import authenticate_user
-from routers.schemas import Token, TokenData
+from routers.schemas import Token, TokenData, TokenKamilo
 from routers.hashing import Hash
 from jose import jwt, JWTError
 
@@ -31,7 +31,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
         data={"sub": user.username, "scopes": form_data.scopes}, expires_delta=access_token_expires
     )
 
-    return Token(access_token=access_token, token_type="bearer")
+    return TokenKamilo(uuid=user.uuid, username=user.username, full_name=user.full_name, disabled=user.disabled, access_token=access_token, token_type="bearer")
 
 
 # @router.get("/me")
