@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from pydantic import BaseModel, ConfigDict, EmailStr, UUID4, Field, constr, field_validator
+from pydantic import BaseModel, EmailStr, UUID4, Field, constr, field_validator
 from datetime import datetime
 
 # class UserProfileBase(BaseModel):
@@ -19,8 +19,8 @@ from datetime import datetime
 # class UserProfile(UserProfileBase):
 #     id: str
 #     user_id: int
-#     class Config(ConfigDict):
-#         orm_mode = True
+    # class Config():
+    #     orm_mode = True
 
 class UserBase(BaseModel):
     username: EmailStr
@@ -41,8 +41,8 @@ class User(UserBase):
     uuid: UUID4
     created: datetime
     # user_profile = UserProfile
-    class Config(ConfigDict):
-        orm_mode: True
+    class Config():
+        orm_mode = True
 
 class UserDB(User):
     hashed_password: str
@@ -50,8 +50,8 @@ class UserDB(User):
 class CurrentUser(UserBase):
     uuid: UUID4
     disabled: bool
-    class Config(ConfigDict):
-        orm_mode: True
+    class Config():
+        orm_mode = True
 
 class UserUpdate(BaseModel):
     username: EmailStr = Field(default=None)
